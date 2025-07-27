@@ -1,0 +1,15 @@
+{
+    "name": "@ycr/gas",
+    "version": "1.0.0",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@types/google-apps-script": "catalog:",
+        "@ycr/types": "workspace:",
+        "rollup-plugin-google-apps-script": "catalog:",
+        "vite": "catalog:"
+    }
+}

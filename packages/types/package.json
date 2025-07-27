@@ -1,0 +1,5 @@
+{
+    "name": "@ycr/types",
+    "private": true,
+    "types": "src/index.ts"
+}

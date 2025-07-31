@@ -3,7 +3,7 @@ import { BanId, BansJson, BanWord } from '@ycr/types';
 declare const SCRIPT_NAME: string;
 declare const BACKEND_URL: string;
 
-const ytcPolicy = window.trustedTypes?.createPolicy('ytc-policy', {
+const ycrPolicy = window.trustedTypes?.createPolicy('ycr-policy', {
     createHTML: (unsafeValue) => {
         return unsafeValue;
     },
@@ -11,6 +11,56 @@ const ytcPolicy = window.trustedTypes?.createPolicy('ytc-policy', {
 
 const logger = (...args: unknown[]) => {
     console.log(`[${SCRIPT_NAME}]`, ...args);
+};
+
+const appendStyle = () => {
+    const styleElem = document.createElement('style');
+    styleElem.setAttribute('ycr-style', '');
+    styleElem.innerHTML = ycrPolicy?.createHTML(`
+        .ycr-button {
+            position: relative;
+            background-color: var(--yt-spec-menu-background);
+            color: var(--yt-spec-text-primary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+
+            &::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                display: block;
+                width: 100%;
+                height: 100%;
+                border-radius: inherit;
+            }
+
+            &:hover::before {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+            &:active::before {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+        }
+
+        [ycr-word-ban-button] {
+            position: fixed;
+            top: -100vh;
+            left: -100vw;
+            display: none;
+        }
+
+        [ycr-id-ban-button] {
+            margin-left: 0.5rem;
+        }
+
+        [ycr-banned] {
+            filter: invert(100%) grayscale(100%) contrast(100);
+            opacity: 0.3;
+        }
+    `) as unknown as string;
+    document.head.appendChild(styleElem);
 };
 
 const fetchBans = async () => {
@@ -32,127 +82,136 @@ const getBanWords = () => {
     return GM_getValue<BanWord[]>('words').map(x => x.word);
 };
 
-const setupContextMenu = () => {
-    const contextMenuElem = document.createElement('div');
-    contextMenuElem.style.position = 'fixed';
-    contextMenuElem.style.top = '-100vh';
-    contextMenuElem.style.left = '-100vw';
-    contextMenuElem.style.display = 'hidden';
-    contextMenuElem.style.backgroundColor = 'black';
+const onBanButtonClick = (e: MouseEvent) => {
+    if (!(e.target instanceof HTMLElement)) return;
 
-    const menuButtonElem = document.createElement('button');
-    menuButtonElem.textContent = 'BAN';
-    menuButtonElem.onclick = () => {
-        const q = menuButtonElem.dataset.q;
+    const q = e.target.dataset.q;
 
-        let prop: 'ids' | 'words';
-        const data: Partial<BanId & BanWord> = {};
+    let prop: 'ids' | 'words';
+    const data: Partial<BanId & BanWord> = {};
 
-        if (q === 'pushBanId') {
-            prop = 'ids';
-            data.id = menuButtonElem.dataset.id;
-            data.name = menuButtonElem.dataset.name;
-        }
-        else if (q === 'pushBanWord') {
-            prop = 'words';
-            data.word = menuButtonElem.dataset.word;
-        }
-        else return;
+    if (q === 'pushBanId') {
+        prop = 'ids';
+        data.id = e.target.dataset.id;
+        data.name = e.target.dataset.name;
+    }
+    else if (q === 'pushBanWord') {
+        prop = 'words';
+        data.word = e.target.dataset.word;
+    }
+    else return;
 
-        GM_setValue(prop, [
-            ...GM_getValue<BanId[] | BanWord[]>(prop),
-            data,
-        ]);
+    GM_setValue(prop, [
+        ...GM_getValue<BanId[] | BanWord[]>(prop),
+        data,
+    ]);
 
-        GM_xmlhttpRequest({
-            method: 'POST',
-            url: `${BACKEND_URL}?q=${q}`,
-            data: JSON.stringify(data),
-            onload: (res) => {
-                logger(res);
-                logger(JSON.parse(res.responseText));
-            },
-        });
+    GM_xmlhttpRequest({
+        method: 'POST',
+        url: `${BACKEND_URL}?q=${q}`,
+        data: JSON.stringify(data),
+        onload: (res) => {
+            logger(res);
+            logger(JSON.parse(res.responseText));
+        },
+    });
 
-        logger('BAN', q, prop, data);
+    logger('BAN', q, prop, data);
 
-        document.querySelectorAll<HTMLElement>('ytd-comment-view-model').forEach(ban);
+    document.querySelectorAll<HTMLElement>('ytd-comment-view-model').forEach(executeComment);
+};
+
+const setupWordBan = () => {
+    const wordBanButton = document.createElement('button');
+
+    wordBanButton.setAttribute('ycr-word-ban-button', '');
+    wordBanButton.classList.add('ycr-button');
+    wordBanButton.textContent = 'BAN';
+    wordBanButton.onclick = (e) => {
+        onBanButtonClick(e);
+        wordBanButton.style.display = 'none';
     };
 
-    contextMenuElem.appendChild(menuButtonElem);
-    document.body.appendChild(contextMenuElem);
+    document.body.appendChild(wordBanButton);
 
-    document.oncontextmenu = e => {
+    document.addEventListener('mouseup', async e => {
+        // 左クリックでない場合は無視
+        if (e.button !== 0) return;
+
+        // コメント領域でなければ無視
         if (!(e.target instanceof HTMLElement)) return;
+        if (!e.target.closest('#comments #content')) return;
 
-        let isOverrideContextMenu = false;
+        // getSelection()で正しい値を得るためにイベントループを待機する
+        await new Promise(resolve => setTimeout(resolve));
 
-        const selectionText = getSelection()?.toString();
+        // 要素が選択されていなければ無視
+        const selection = getSelection();
+        if (!selection || selection.isCollapsed) return;
 
-        const authorTextElem = e.target.closest<HTMLAnchorElement>('#author-text');
-        if (authorTextElem) {
-            isOverrideContextMenu = true;
+        const banWord = selection.toString();
 
-            const banId = authorTextElem.href.split('/').pop()?.slice(1);
-            const banName = authorTextElem.innerText;
+        wordBanButton.dataset.q = 'pushBanWord';
+        wordBanButton.dataset.word = banWord;
+        wordBanButton.textContent = `BAN Word: ${banWord}`;
 
-            menuButtonElem.dataset.q = 'pushBanId';
-            menuButtonElem.dataset.id = banId;
-            menuButtonElem.dataset.name = banName;
-            menuButtonElem.removeAttribute('data-word');
-            menuButtonElem.textContent = `BAN ID: ${banId} (${banName})`;
-        }
-        else if (e.target.closest('ytd-comment-view-model') && selectionText) {
-            isOverrideContextMenu = true;
+        wordBanButton.style.display = 'block';
+        wordBanButton.style.top = `${e.clientY}px`;
+        wordBanButton.style.left = `${e.clientX}px`;
+    });
 
-            const banWord = selectionText;
+    document.addEventListener('mousedown', e => {
+        // 左クリックでない場合は無視
+        if (e.button !== 0) return;
 
-            menuButtonElem.dataset.q = 'pushBanWord';
-            menuButtonElem.dataset.word = banWord;
-            menuButtonElem.removeAttribute('data-id');
-            menuButtonElem.removeAttribute('data-name');
-            menuButtonElem.textContent = `BAN Word: ${banWord}`;
-        }
+        // BANボタンなら無視
+        if (!(e.target instanceof HTMLElement)) return;
+        if (e.target.closest('[ycr-word-ban-button]')) return;
 
-        if (isOverrideContextMenu) {
-            e.preventDefault();
-
-            contextMenuElem.style.display = 'block';
-            contextMenuElem.style.top = `${e.clientY}px`;
-            contextMenuElem.style.left = `${e.clientX}px`;
-        }
-    };
-
-    document.addEventListener('click', () => {
-        contextMenuElem.style.display = 'none';
+        wordBanButton.style.display = 'none';
     });
 };
 
 /**
  * BAN判定して消す
  */
-const ban = (deleteTargetElem: HTMLElement) => {
+const executeComment = (deleteTargetElem: HTMLElement) => {
+    const headerAuthorElem = deleteTargetElem.querySelector<HTMLElement>('#header-author:not(:has([ycr-banned]))');
+    if (!headerAuthorElem) return;
+    const authorTextElem = headerAuthorElem.querySelector<HTMLAnchorElement>('#author-text')!;
+    const contentTextElem = deleteTargetElem.querySelector<HTMLElement>('#content-text')!;
+
+    const authorId = decodeURI(authorTextElem.href.split('/').pop()!);
+    const contentText = contentTextElem.innerText;
+
+    if (!deleteTargetElem.querySelector('[ycr-id-ban-button]')) {
+        const banButtonElem = document.createElement('button');
+        banButtonElem.onclick = onBanButtonClick;
+        banButtonElem.setAttribute('ycr-id-ban-button', '');
+        banButtonElem.classList.add('ycr-button');
+        banButtonElem.dataset.q = 'pushBanId';
+        banButtonElem.dataset.id = authorId;
+        banButtonElem.dataset.name = authorTextElem.innerText;
+        banButtonElem.textContent = 'BAN';
+        headerAuthorElem.appendChild(banButtonElem);
+    }
+
     let reason = undefined;
-    const innerHtml = deleteTargetElem.innerHTML ?? '';
-    if (getBanIds().some(x => innerHtml.includes(x) || innerHtml.includes(decodeURI(x)))) {
+    if (getBanIds().some(banId => authorId === banId || contentText.includes(banId))) {
         reason = 'Included BAN ID';
     }
-    else if (getBanWords().some(x => innerHtml.includes(x) || innerHtml.includes(decodeURI(x)))) {
+    else if (getBanWords().some(x => contentText.includes(x))) {
         reason = 'Included BAN words';
     }
     if (!reason) return;
 
-    if (deleteTargetElem.parentNode?.nodeName.toLowerCase() === 'ytd-comment-thread-renderer') {
-        deleteTargetElem = deleteTargetElem.parentNode as HTMLElement;
+    // リプライでないなら親の方に移動して丸ごと消す
+    if (!deleteTargetElem.closest('#replies')) {
+        deleteTargetElem = deleteTargetElem.closest('ytd-comment-thread-renderer')!;
     }
 
-    deleteTargetElem.innerHTML = ytcPolicy?.createHTML(`
-        <span
-            style="
-                filter: invert(100%) grayscale(100%) contrast(100);
-                opacity: 0.3;
-            "
-        >[${SCRIPT_NAME}] 削除しました。(${reason})</span>
+    deleteTargetElem.innerHTML = ycrPolicy?.createHTML(`
+        <span ycr-banned>[${SCRIPT_NAME}] 削除しました。(${reason})</span>
     `) as unknown as string;
 
     logger(`Deleted. (${reason})`);
@@ -164,7 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!GM_getValue('ids')) GM_setValue('ids', []);
     if (!GM_getValue('words')) GM_setValue('words', []);
 
-    setupContextMenu();
+    appendStyle();
+    setupWordBan();
 
     const observer = new MutationObserver(mutationList => {
         const list = mutationList.filter(x =>
@@ -176,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const mutation of list) {
             if (mutation.target instanceof HTMLElement) {
-                ban(mutation.target);
+                executeComment(mutation.target);
             }
         }
     });

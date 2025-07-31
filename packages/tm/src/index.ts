@@ -207,7 +207,10 @@ const executeComment = (deleteTargetElem: HTMLElement) => {
 
     // リプライでないなら親の方に移動して丸ごと消す
     if (!deleteTargetElem.closest('#replies')) {
-        deleteTargetElem = deleteTargetElem.closest('ytd-comment-thread-renderer')!;
+        const yctrElem = deleteTargetElem.closest<HTMLElement>('ytd-comment-thread-renderer');
+        if (yctrElem) {
+            deleteTargetElem = yctrElem;
+        }
     }
 
     deleteTargetElem.innerHTML = ycrPolicy?.createHTML(`

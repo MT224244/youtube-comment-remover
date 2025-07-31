@@ -1,5 +1,6 @@
-import { version } from '../package.json';
 import type { BanId, BansJson, BanWord } from '@ycr/types';
+
+declare const VERSION: string;
 
 export const FILE_NAME = 'bans.json';
 
@@ -55,7 +56,7 @@ export const GET_meta = () => {
     return ContentService.createTextOutput()
         .setMimeType(ContentService.MimeType.JSON)
         .setContent(JSON.stringify({
-            version
+            version: VERSION,
         }));
 };
 

@@ -1,5 +1,5 @@
 import { $ as shell } from 'bun';
-import { version } from '@ycr/gas/package.json';
+import { version } from '../package.json';
 
 const $ = async (strings: TemplateStringsArray, ...expressions: Bun.ShellExpression[]) => {
     const command = strings.raw

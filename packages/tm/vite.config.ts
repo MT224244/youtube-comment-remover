@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { version } from '../../package.json';
 import packageJson from './package.json';
 
 export default defineConfig({
@@ -9,7 +10,7 @@ export default defineConfig({
             const arr: string[][] = [
                 ['name', name],
                 ['namespace', namespace],
-                ['version', packageJson.version],
+                ['version', version],
                 ['description', packageJson.description],
                 ['author', packageJson.author],
                 ...Object.entries(tampermonkey).flatMap(([key, value]) => {

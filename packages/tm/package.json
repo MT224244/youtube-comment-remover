@@ -1,6 +1,5 @@
 {
     "name": "@ycr/tm",
-    "version": "1.0.0",
     "description": "Youtubeのコメント欄にいる変な奴を消し飛ばす",
     "author": "MT224244",
     "type": "module",

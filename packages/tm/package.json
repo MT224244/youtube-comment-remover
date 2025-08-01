@@ -1,6 +1,6 @@
 {
     "name": "@ycr/tm",
-    "description": "Youtubeのコメント欄にいる変な奴を消し飛ばす",
+    "description": "YouTubeのコメント欄にいる変な奴を消し飛ばす",
     "author": "MT224244",
     "type": "module",
     "private": true,

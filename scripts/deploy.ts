@@ -14,26 +14,26 @@ const $ = async (strings: TemplateStringsArray, ...expressions: Bun.ShellExpress
     return result;
 };
 
-const deployes = await $`clasp list-deployments`;
-let deplymentId: string | undefined;
-for (const line of deployes.split('\n')) {
+const deployments = await $`clasp list-deployments`;
+let deploymentId: string | undefined;
+for (const line of deployments.split('\n')) {
     const match = /- ([^ ]+) @\d+/.exec(line);
     if (match) {
-        deplymentId = match[1];
+        deploymentId = match[1];
         break;
     }
 }
 
-if (deplymentId) {
-    await $`clasp update-deployment ${deplymentId} -d "v${version}"`;
+if (deploymentId) {
+    await $`clasp update-deployment ${deploymentId} -d "v${version}"`;
 }
 else {
     const deployed = await $`clasp create-deployment -d "v${version}"`;
     const match = /Deployed ([^ ]+) @\d+/.exec(deployed);
     if (match) {
-        deplymentId = match[1];
+        deploymentId = match[1];
     }
 }
 
-const url = `https://script.google.com/macros/s/${deplymentId}/exec?q=tampermonkey`;
+const url = `https://script.google.com/macros/s/${deploymentId}/exec?q=tampermonkey`;
 console.log('Tampermonkey script URL:', url);

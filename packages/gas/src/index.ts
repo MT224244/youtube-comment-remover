@@ -4,7 +4,9 @@ import {
     GET_tampermonkey,
     getFile,
     getFileId,
+    POST_pushBanChannel,
     POST_pushBanId,
+    POST_pushBanMixlist,
     POST_pushBanWord,
     return404,
 } from './lib';
@@ -90,6 +92,14 @@ global.doPost = ({ parameters, postData }) => {
     else if (q === 'pushBanWord') {
         const data = JSON.parse(postData.getDataAsString());
         return POST_pushBanWord(data);
+    }
+    else if (q === 'pushBanChannel') {
+        const data = JSON.parse(postData.getDataAsString());
+        return POST_pushBanChannel(data);
+    }
+    else if (q === 'pushBanMixlist') {
+        const data = JSON.parse(postData.getDataAsString());
+        return POST_pushBanMixlist(data);
     }
     else {
         return return404();

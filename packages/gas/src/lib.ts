@@ -1,4 +1,4 @@
-import type { BanId, BansJson, BanWord } from '@ycr/types';
+import type { BanChannel, BanId, BanMixlist, BansJson, BanWord } from '@ycr/types';
 
 declare const VERSION: string;
 
@@ -8,9 +8,11 @@ export const FILE_NAME = 'bans.json';
  * 初期状態のファイル作る
  */
 export const createFile = () => {
-    const content = {
+    const content: BansJson = {
         ids: [],
         words: [],
+        channels: [],
+        mixlists: [],
     };
 
     const blob = Utilities.newBlob(JSON.stringify(content), 'application/json', FILE_NAME);
@@ -38,6 +40,7 @@ export const getFile = (): BansJson => {
 
 /**
  * ファイルのアップデート
+ * @param content
  */
 export const updateFile = (content: BansJson) => {
     const fileId = getFileId();
@@ -77,6 +80,11 @@ export const GET_tampermonkey = () => {
 export const GET_getBans = () => {
     const bans = getFile();
 
+    if (bans.ids === undefined) bans.ids = [];
+    if (bans.words === undefined) bans.words = [];
+    if (bans.channels === undefined) bans.channels = [];
+    if (bans.mixlists === undefined) bans.mixlists = [];
+
     return ContentService.createTextOutput()
         .setMimeType(ContentService.MimeType.JSON)
         .setContent(JSON.stringify(bans));
@@ -84,6 +92,7 @@ export const GET_getBans = () => {
 
 /**
  * doPost用: ファイルにIDを挿入
+ * @param data
  */
 export const POST_pushBanId = (data: BanId) => {
     // dataがおかしい
@@ -108,6 +117,7 @@ export const POST_pushBanId = (data: BanId) => {
 
 /**
  * doPost用: ファイルにWordを挿入
+ * @param data
  */
 export const POST_pushBanWord = (data: BanWord) => {
     // dataがおかしい
@@ -123,6 +133,64 @@ export const POST_pushBanWord = (data: BanWord) => {
     }
 
     bans.words.push(data);
+    updateFile(bans);
+
+    return ContentService
+        .createTextOutput(JSON.stringify(bans))
+        .setMimeType(ContentService.MimeType.JSON);
+};
+
+/**
+ * doPost用: ファイルにChannelを挿入
+ * @param data
+ */
+export const POST_pushBanChannel = (data: BanChannel) => {
+    // dataがおかしい
+    if (typeof data !== 'object' || !data.id) {
+        return return400();
+    }
+
+    const bans = getFile();
+
+    if (bans.channels === undefined) {
+        bans.channels = [];
+    }
+
+    // 追加しようとしたChannelが既にある
+    if (bans.channels.some(x => x.id === data.id)) {
+        return return409();
+    }
+
+    bans.channels.push(data);
+    updateFile(bans);
+
+    return ContentService
+        .createTextOutput(JSON.stringify(bans))
+        .setMimeType(ContentService.MimeType.JSON);
+};
+
+/**
+ * doPost用: ファイルにMixlistを挿入
+ * @param data
+ */
+export const POST_pushBanMixlist = (data: BanMixlist) => {
+    // dataがおかしい
+    if (typeof data !== 'object' || !data.id) {
+        return return400();
+    }
+
+    const bans = getFile();
+
+    if (bans.mixlists === undefined) {
+        bans.mixlists = [];
+    }
+
+    // 追加しようとしたChannelが既にある
+    if (bans.mixlists.some(x => x.id === data.id)) {
+        return return409();
+    }
+
+    bans.mixlists.push(data);
     updateFile(bans);
 
     return ContentService
@@ -176,6 +244,7 @@ export const return409 = () => {
 
 /**
  * ユーザープロパティにファイルIDを格納
+ * @param fileId
  */
 export const saveFileId = (fileId: string) => {
     const userPropsService = PropertiesService.getUserProperties();

@@ -1,28 +1,21 @@
-import { BanId, BansJson, BanWord } from '@ycr/types';
-
-declare const SCRIPT_NAME: string;
-declare const BACKEND_URL: string;
-
-const ycrPolicy = window.trustedTypes?.createPolicy('ycr-policy', {
-    createHTML: (unsafeValue) => {
-        return unsafeValue;
-    },
-});
-
-const logger = (...args: unknown[]) => {
-    console.log(`[${SCRIPT_NAME}]`, ...args);
-};
+import { BansJson } from '@ycr/types';
+import { logger, ycrPolicy } from './lib';
+import { commentsObserver, setupWordBan } from './comments';
+import { channelsObserver } from './channels';
 
 const appendStyle = () => {
     const styleElem = document.createElement('style');
     styleElem.setAttribute('ycr-style', '');
     styleElem.innerHTML = ycrPolicy?.createHTML(`
-        .ycr-button {
+        .ycr-menu-button {
             position: relative;
-            background-color: var(--yt-spec-menu-background);
+            width: 100%;
+            padding: 12px 16px;
+            background-color: transparent;
             color: var(--yt-spec-text-primary);
             border: none;
-            border-radius: 4px;
+            text-align: left;
+            white-space: nowrap;
             cursor: pointer;
 
             &::before {
@@ -33,31 +26,39 @@ const appendStyle = () => {
                 display: block;
                 width: 100%;
                 height: 100%;
-                border-radius: inherit;
             }
 
-            &:hover::before {
-                background-color: rgba(255, 255, 255, 0.1);
+            &:hover {
+                background-color: var(--yt-spec-10-percent-layer);
             }
             &:active::before {
-                background-color: rgba(255, 255, 255, 0.2);
+                background-color: var(--yt-spec-10-percent-layer);
             }
         }
 
-        [ycr-word-ban-button] {
+        .ycr-menu:has(#ycr-word-ban-button) {
             position: fixed;
             top: -100vh;
             left: -100vw;
             display: none;
-        }
-
-        [ycr-id-ban-button] {
-            margin-left: 0.5rem;
+            padding: 8px 0;
+            background-color: var(--yt-spec-menu-background);
+            border-radius: 12px;
+            z-index: 10000;
         }
 
         [ycr-banned] {
-            filter: invert(100%) grayscale(100%) contrast(100);
-            opacity: 0.3;
+            display: block;
+
+            * {
+                display: none;
+            }
+            &::before {
+                content: attr(ycr-banned);
+                display: block;
+                filter: invert(100%) grayscale(100%) contrast(100);
+                opacity: 0.3;
+            }
         }
     `) as unknown as string;
     document.head.appendChild(styleElem);
@@ -74,191 +75,77 @@ const fetchBans = async () => {
     }));
 };
 
-const getBanIds = () => {
-    return GM_getValue<BanId[]>('ids').map(x => x.id);
-};
-
-const getBanWords = () => {
-    return GM_getValue<BanWord[]>('words').map(x => x.word);
-};
-
-const onBanButtonClick = (e: MouseEvent) => {
-    if (!(e.target instanceof HTMLElement)) return;
-
-    const q = e.target.dataset.q;
-
-    let prop: 'ids' | 'words';
-    const data: Partial<BanId & BanWord> = {};
-
-    if (q === 'pushBanId') {
-        prop = 'ids';
-        data.id = e.target.dataset.id;
-        data.name = e.target.dataset.name;
-    }
-    else if (q === 'pushBanWord') {
-        prop = 'words';
-        data.word = e.target.dataset.word;
-    }
-    else return;
-
-    GM_setValue(prop, [
-        ...GM_getValue<BanId[] | BanWord[]>(prop),
-        data,
-    ]);
-
-    GM_xmlhttpRequest({
-        method: 'POST',
-        url: `${BACKEND_URL}?q=${q}`,
-        data: JSON.stringify(data),
-        onload: (res) => {
-            logger(res);
-            logger(JSON.parse(res.responseText));
-        },
-    });
-
-    logger('BAN', q, prop, data);
-
-    document.querySelectorAll<HTMLElement>('ytd-comment-view-model').forEach(executeComment);
-};
-
-const setupWordBan = () => {
-    const wordBanButton = document.createElement('button');
-
-    wordBanButton.setAttribute('ycr-word-ban-button', '');
-    wordBanButton.classList.add('ycr-button');
-    wordBanButton.textContent = 'BAN';
-    wordBanButton.onclick = (e) => {
-        onBanButtonClick(e);
-        wordBanButton.style.display = 'none';
-    };
-
-    document.body.appendChild(wordBanButton);
-
-    document.addEventListener('mouseup', async e => {
-        // 左クリックでない場合は無視
-        if (e.button !== 0) return;
-
-        // コメント領域でなければ無視
-        if (!(e.target instanceof HTMLElement)) return;
-        if (!e.target.closest('#comments #content')) return;
-
-        // getSelection()で正しい値を得るためにイベントループを待機する
-        await new Promise(resolve => setTimeout(resolve));
-
-        // 要素が選択されていなければ無視
-        const selection = getSelection();
-        if (!selection || selection.isCollapsed) return;
-
-        const banWord = selection.toString();
-
-        wordBanButton.dataset.q = 'pushBanWord';
-        wordBanButton.dataset.word = banWord;
-        wordBanButton.textContent = `BAN Word: ${banWord}`;
-
-        wordBanButton.style.display = 'block';
-        wordBanButton.style.top = `${e.clientY}px`;
-        wordBanButton.style.left = `${e.clientX}px`;
-    });
-
-    document.addEventListener('mousedown', e => {
-        // 左クリックでない場合は無視
-        if (e.button !== 0) return;
-
-        // BANボタンなら無視
-        if (!(e.target instanceof HTMLElement)) return;
-        if (e.target.closest('[ycr-word-ban-button]')) return;
-
-        wordBanButton.style.display = 'none';
-    });
-};
-
-/**
- * BAN判定して消す
- */
-const executeComment = (deleteTargetElem: HTMLElement) => {
-    const headerAuthorElem = deleteTargetElem.querySelector<HTMLElement>('#header-author:not(:has([ycr-banned]))');
-    if (!headerAuthorElem) return;
-    const authorTextElem = headerAuthorElem.querySelector<HTMLAnchorElement>('#author-text')!;
-    const contentTextElem = deleteTargetElem.querySelector<HTMLElement>('#content-text')!;
-
-    const authorId = decodeURI(authorTextElem.href.split('/').pop()!);
-    const contentText = contentTextElem.innerText;
-
-    if (!deleteTargetElem.querySelector('[ycr-id-ban-button]')) {
-        const banButtonElem = document.createElement('button');
-        banButtonElem.onclick = onBanButtonClick;
-        banButtonElem.setAttribute('ycr-id-ban-button', '');
-        banButtonElem.classList.add('ycr-button');
-        banButtonElem.dataset.q = 'pushBanId';
-        banButtonElem.dataset.id = authorId;
-        banButtonElem.dataset.name = authorTextElem.innerText;
-        banButtonElem.textContent = 'BAN';
-        headerAuthorElem.appendChild(banButtonElem);
-    }
-
-    let reason = undefined;
-    if (getBanIds().some(banId => authorId === banId || contentText.includes(banId))) {
-        reason = 'Included BAN ID';
-    }
-    else if (getBanWords().some(x => contentText.includes(x))) {
-        reason = 'Included BAN words';
-    }
-    if (!reason) return;
-
-    // リプライでないなら親の方に移動して丸ごと消す
-    if (!deleteTargetElem.closest('#replies')) {
-        const yctrElem = deleteTargetElem.closest<HTMLElement>('ytd-comment-thread-renderer');
-        if (yctrElem) {
-            deleteTargetElem = yctrElem;
-        }
-    }
-
-    deleteTargetElem.innerHTML = ycrPolicy?.createHTML(`
-        <span ycr-banned>[${SCRIPT_NAME}] 削除しました。(${reason})</span>
-    `) as unknown as string;
-
-    logger(`Deleted. (${reason})`);
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     logger('Running...');
 
     if (!GM_getValue('ids')) GM_setValue('ids', []);
     if (!GM_getValue('words')) GM_setValue('words', []);
+    if (!GM_getValue('channels')) GM_setValue('channels', []);
+    if (!GM_getValue('mixlists')) GM_setValue('mixlists', []);
 
     appendStyle();
     setupWordBan();
 
+    let foundComments = false;
+    let foundChannels = false;
+
+    // 監視対象要素の事前存在確認
+    {
+        const elem = document.querySelector('#comments');
+        if (elem) {
+            foundComments = true;
+            commentsObserver.observe(elem, { childList: true, subtree: true });
+        }
+    }
+    {
+        const elem = document.querySelector('ytd-watch-next-secondary-results-renderer');
+        if (elem) {
+            foundChannels = true;
+            channelsObserver.observe(elem, { childList: true, subtree: true });
+        }
+    }
+
     const observer = new MutationObserver(mutationList => {
         const list = mutationList.filter(x =>
             x.target instanceof HTMLElement &&
-            x.type === 'childList' &&
-            x.target.tagName === 'YTD-COMMENT-VIEW-MODEL'
+            x.type === 'childList'
         );
-        if (!list.length) return;
 
-        for (const mutation of list) {
-            if (mutation.target instanceof HTMLElement) {
-                executeComment(mutation.target);
+        if (!foundComments) {
+            const mutation = list.find(x =>
+                x.target instanceof HTMLElement &&
+                x.target.id === 'comments'
+            );
+            if (mutation) {
+                foundComments = true;
+                commentsObserver.observe(mutation.target, { childList: true, subtree: true });
             }
+        }
+
+        if (!foundChannels) {
+            const mutation = list.find(x =>
+                x.target instanceof HTMLElement &&
+                x.target.tagName === 'YTD-WATCH-NEXT-SECONDARY-RESULTS-RENDERER'
+            );
+            if (mutation) {
+                foundChannels = true;
+                channelsObserver.observe(mutation.target, { childList: true, subtree: true });
+            }
+        }
+
+        if (foundComments && foundChannels) {
+            observer.disconnect();
         }
     });
 
-    const commentsWaiter = setInterval(() => {
-        const commentsElem = document.querySelector('#comments');
-        if (commentsElem) {
-            clearInterval(commentsWaiter);
-            observer.observe(commentsElem, {
-                childList: true,
-                subtree: true,
-            });
-        }
-    }, 100);
+    observer.observe(document.body, { childList: true, subtree: true });
 
     // データベースと同期する
     fetchBans().then(bans => {
         GM_setValue('ids', bans.ids);
         GM_setValue('words', bans.words);
+        GM_setValue('channels', bans.channels);
+        GM_setValue('mixlists', bans.mixlists);
         logger('Sync BANs:', bans);
     });
 });

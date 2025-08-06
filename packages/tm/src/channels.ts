@@ -47,7 +47,10 @@ const getVideoData = (elem: HTMLElement): VideoData | undefined => {
     else if (data.contentType === 'LOCKUP_CONTENT_TYPE_VIDEO') {
         type = 'video';
     }
-    else if (data.contentType === 'LOCKUP_CONTENT_TYPE_PLAYLIST') {
+    else if (
+        data.contentType === 'LOCKUP_CONTENT_TYPE_PLAYLIST' ||
+        data.contentType === 'LOCKUP_CONTENT_TYPE_PODCAST'
+    ) {
         type = 'mixlist';
     }
 

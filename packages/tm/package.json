@@ -7,7 +7,10 @@
     "tampermonkey": {
         "name": "YouTube Comment Remover",
         "namespace": "https://mt224244.com",
-        "match": "https://www.youtube.com/watch?v=*",
+        "match": [
+            "https://www.youtube.com/watch?v=*",
+            "https://www.youtube.com/live/*"
+        ],
         "run-at": "document-start",
         "require": "https://unpkg.com/jsonpath-plus@10.3.0/dist/index-browser-umd.min.cjs",
         "connect": [

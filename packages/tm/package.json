@@ -7,6 +7,8 @@
     "tampermonkey": {
         "name": "YouTube Comment Remover",
         "namespace": "https://mt224244.com",
+        "updateURL": "{{BACKEND_URL}}?q=tampermonkey",
+        "downloadURL": "{{BACKEND_URL}}?q=tampermonkey",
         "match": [
             "https://www.youtube.com/watch?v=*",
             "https://www.youtube.com/live/*"

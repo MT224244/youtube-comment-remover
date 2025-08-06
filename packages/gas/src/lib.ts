@@ -67,7 +67,7 @@ export const GET_tampermonkey = () => {
     const scriptCode = HtmlService
         .createHtmlOutputFromFile('tampermonkey')
         .getContent()
-        .replace('{{BACKEND_URL}}', ScriptApp.getService().getUrl());
+        .replaceAll('{{BACKEND_URL}}', ScriptApp.getService().getUrl());
 
     return ContentService.createTextOutput()
         .setMimeType(ContentService.MimeType.JAVASCRIPT)

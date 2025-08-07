@@ -4,6 +4,9 @@ const idBanButtonElem = document.createElement('button');
 idBanButtonElem.classList.add('ycr-menu-button');
 idBanButtonElem.textContent = 'BAN';
 
+/**
+ * コメント文字選択でBANメニューを出す
+ */
 export const setupWordBan = () => {
     const wordBanButtonContainer = document.createElement('div');
     wordBanButtonContainer.classList.add('ycr-menu');
@@ -91,6 +94,22 @@ const setupMenuButton = (elem: HTMLElement, id: string, name: string) => {
 };
 
 /**
+ * IDがBAN対象か判定する
+ * @param id
+ */
+const isBanId = (id: string | undefined) => {
+    return getBanIds().some(banId => id === banId);
+};
+
+/**
+ * ワードがBAN対象か判定する
+ * @param text
+ */
+const isBanWord = (text: string) => {
+    return getBanWords().some(banWord => text.includes(banWord));
+};
+
+/**
  * BAN状況をUIのコメント欄に反映する
  */
 const updateComments = () => {
@@ -118,10 +137,10 @@ const executeComment = async (deleteTargetElem: HTMLElement) => {
     const contentText = contentTextElem.innerText;
 
     let reason = undefined;
-    if (getBanIds().some(banId => authorId === banId)) {
+    if (isBanId(authorId)) {
         reason = 'Reason: BAN ID';
     }
-    else if (getBanWords().some(x => contentText.includes(x))) {
+    else if (isBanWord(contentText)) {
         reason = 'Reason: BAN Word';
     }
 

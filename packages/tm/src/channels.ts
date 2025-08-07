@@ -14,6 +14,85 @@ videoBanButtonElem.classList.add('ycr-menu-button');
 videoBanButtonElem.textContent = 'BAN';
 
 /**
+ * メニューボタンにクリックイベントを生やして項目を埋め込む
+ * @param elem
+ * @param videoData
+ */
+const setupMenuButton = (elem: HTMLElement, videoData: VideoData) => {
+    let buttonElem;
+
+    if (videoData.type === 'video' || videoData.type === 'mixlist') {
+        buttonElem = elem.querySelector<HTMLElement>(
+            '.yt-lockup-metadata-view-model-wiz__menu-button',
+        );
+    }
+    else if (videoData.type === 'short') {
+        buttonElem = elem.querySelector<HTMLElement>(
+            'ytd-menu-renderer',
+        );
+    }
+
+    if (buttonElem && !buttonElem.hasAttribute('ycr-menu-button')) {
+        buttonElem.setAttribute('ycr-menu-button', '');
+
+        buttonElem.addEventListener('click', () => {
+            console.log(videoData);
+
+            if (videoData.type === 'video') {
+                const listElem = document.querySelector<HTMLElement>(
+                    'ytd-popup-container > tp-yt-iron-dropdown yt-list-view-model',
+                );
+                if (!listElem) return;
+
+                videoBanButtonElem.onclick = e => {
+                    pushBan(e);
+                    updateChannels();
+                };
+                videoBanButtonElem.textContent = 'BAN Channel';
+                videoBanButtonElem.dataset.ycrQuery = 'pushBanChannel';
+                videoBanButtonElem.dataset.ycrId = videoData.channelId;
+                videoBanButtonElem.dataset.ycrName = videoData.channelName;
+                listElem.appendChild(videoBanButtonElem);
+            }
+            else if (videoData.type === 'mixlist') {
+                const listElem = document.querySelector<HTMLElement>(
+                    'ytd-popup-container > tp-yt-iron-dropdown yt-list-view-model',
+                );
+                if (!listElem) return;
+
+                videoBanButtonElem.onclick = e => {
+                    pushBan(e);
+                    updateChannels();
+                };
+                videoBanButtonElem.textContent = 'BAN Mixlist';
+                videoBanButtonElem.dataset.ycrQuery = 'pushBanMixlist';
+                videoBanButtonElem.dataset.ycrId = videoData.videoId;
+                videoBanButtonElem.dataset.ycrTitle = videoData.videoTitle;
+                videoBanButtonElem.dataset.ycrName = videoData.channelName;
+                listElem.appendChild(videoBanButtonElem);
+            }
+            else if (videoData.type === 'short') {
+                const listElem = document.querySelector<HTMLElement>(
+                    'ytd-popup-container > tp-yt-iron-dropdown tp-yt-paper-listbox'
+                );
+                if (!listElem) return;
+
+                videoBanButtonElem.onclick = e => {
+                    pushBan(e);
+                    pressEscKey(videoBanButtonElem);
+                    updateChannels();
+                };
+                videoBanButtonElem.textContent = 'BAN Channel';
+                videoBanButtonElem.dataset.ycrQuery = 'pushBanChannel';
+                videoBanButtonElem.dataset.ycrId = videoData.channelId;
+                videoBanButtonElem.dataset.ycrName = videoData.channelName;
+                listElem.appendChild(videoBanButtonElem);
+            }
+        });
+    }
+};
+
+/**
  * 動画データ取得
  * @param elem
  */
@@ -113,18 +192,6 @@ const getVideoData = (elem: HTMLElement): VideoData | undefined => {
 };
 
 /**
- * BAN状況をUIの動画欄に反映する
- */
-const updateChannels = () => {
-    document
-        .querySelectorAll<HTMLElement>('yt-lockup-view-model, ytd-compact-video-renderer')
-        .forEach(executeChannel);
-
-    // エンドスクリーンも更新
-    updateEndscreen();
-};
-
-/**
  * チャンネルがBAN対象か判定する
  * @param id
  */
@@ -141,82 +208,15 @@ const isBanMixlist = (id: string | undefined) => {
 };
 
 /**
- * メニューボタンにクリックイベントを生やして項目を埋め込む
- * @param elem
- * @param videoData
+ * BAN状況をUIの動画欄に反映する
  */
-const setupMenuButton = (elem: HTMLElement, videoData: VideoData) => {
-    let buttonElem;
+const updateChannels = () => {
+    document
+        .querySelectorAll<HTMLElement>('yt-lockup-view-model, ytd-compact-video-renderer')
+        .forEach(executeChannel);
 
-    if (videoData.type === 'video' || videoData.type === 'mixlist') {
-        buttonElem = elem.querySelector<HTMLElement>(
-            '.yt-lockup-metadata-view-model-wiz__menu-button',
-        );
-    }
-    else if (videoData.type === 'short') {
-        buttonElem = elem.querySelector<HTMLElement>(
-            'ytd-menu-renderer',
-        );
-    }
-
-    if (buttonElem && !buttonElem.hasAttribute('ycr-menu-button')) {
-        buttonElem.setAttribute('ycr-menu-button', '');
-
-        buttonElem.addEventListener('click', () => {
-            console.log(videoData);
-
-            if (videoData.type === 'video') {
-                const listElem = document.querySelector<HTMLElement>(
-                    'ytd-popup-container > tp-yt-iron-dropdown yt-list-view-model',
-                );
-                if (!listElem) return;
-
-                videoBanButtonElem.onclick = e => {
-                    pushBan(e);
-                    updateChannels();
-                };
-                videoBanButtonElem.textContent = 'BAN Channel';
-                videoBanButtonElem.dataset.ycrQuery = 'pushBanChannel';
-                videoBanButtonElem.dataset.ycrId = videoData.channelId;
-                videoBanButtonElem.dataset.ycrName = videoData.channelName;
-                listElem.appendChild(videoBanButtonElem);
-            }
-            else if (videoData.type === 'mixlist') {
-                const listElem = document.querySelector<HTMLElement>(
-                    'ytd-popup-container > tp-yt-iron-dropdown yt-list-view-model',
-                );
-                if (!listElem) return;
-
-                videoBanButtonElem.onclick = e => {
-                    pushBan(e);
-                    updateChannels();
-                };
-                videoBanButtonElem.textContent = 'BAN Mixlist';
-                videoBanButtonElem.dataset.ycrQuery = 'pushBanMixlist';
-                videoBanButtonElem.dataset.ycrId = videoData.videoId;
-                videoBanButtonElem.dataset.ycrTitle = videoData.videoTitle;
-                videoBanButtonElem.dataset.ycrName = videoData.channelName;
-                listElem.appendChild(videoBanButtonElem);
-            }
-            else if (videoData.type === 'short') {
-                const listElem = document.querySelector<HTMLElement>(
-                    'ytd-popup-container > tp-yt-iron-dropdown tp-yt-paper-listbox'
-                );
-                if (!listElem) return;
-
-                videoBanButtonElem.onclick = e => {
-                    pushBan(e);
-                    pressEscKey(videoBanButtonElem);
-                    updateChannels();
-                };
-                videoBanButtonElem.textContent = 'BAN Channel';
-                videoBanButtonElem.dataset.ycrQuery = 'pushBanChannel';
-                videoBanButtonElem.dataset.ycrId = videoData.channelId;
-                videoBanButtonElem.dataset.ycrName = videoData.channelName;
-                listElem.appendChild(videoBanButtonElem);
-            }
-        });
-    }
+    // エンドスクリーンも更新
+    updateEndscreen();
 };
 
 /**

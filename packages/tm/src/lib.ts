@@ -94,3 +94,14 @@ export const pressEscKey = (elem: HTMLElement) => {
         cancelable: true,
     }));
 };
+
+export type VideoData = {
+    type: 'video' | 'short' | 'mixlist';
+    videoId: string;
+    videoTitle?: string;
+    channelId?: string;
+    channelName: string;
+};
+
+// エンドスクリーン用
+export const videoDataList: VideoData[] = [];

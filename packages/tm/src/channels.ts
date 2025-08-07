@@ -1,12 +1,13 @@
-import { getBanChannels, getBanMixlists, logger, pressEscKey, pushBan } from './lib';
-
-export type VideoData = {
-    type: 'video' | 'short' | 'mixlist';
-    videoId: string;
-    videoTitle?: string;
-    channelId?: string;
-    channelName: string;
-};
+import { updateEndscreen } from './endscreen';
+import {
+    getBanChannels,
+    getBanMixlists,
+    logger,
+    pressEscKey,
+    pushBan,
+    VideoData,
+    videoDataList,
+} from './lib';
 
 const videoBanButtonElem = document.createElement('button');
 videoBanButtonElem.classList.add('ycr-menu-button');
@@ -118,6 +119,9 @@ const updateChannels = () => {
     document
         .querySelectorAll<HTMLElement>('yt-lockup-view-model, ytd-compact-video-renderer')
         .forEach(executeChannel);
+
+    // エンドスクリーンも更新
+    updateEndscreen();
 };
 
 /**
@@ -222,6 +226,9 @@ const setupMenuButton = (elem: HTMLElement, videoData: VideoData) => {
 const executeChannel = (deleteTargetElem: HTMLElement) => {
     const videoData = getVideoData(deleteTargetElem);
     if (!videoData) return;
+
+    // エンドスクリーン用
+    videoDataList.push(videoData);
 
     let reason = undefined;
     if (videoData.type === 'video' && isBanChannel(videoData.channelId)) {

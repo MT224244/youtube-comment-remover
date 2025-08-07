@@ -2,6 +2,7 @@ import { BansJson } from '@ycr/types';
 import { logger, ycrPolicy } from './lib';
 import { commentsObserver, setupWordBan } from './comments';
 import { channelsObserver } from './channels';
+import { endscreenObserver } from './endscreen';
 
 const appendStyle = () => {
     const styleElem = document.createElement('style');
@@ -60,6 +61,20 @@ const appendStyle = () => {
                 opacity: 0.3;
             }
         }
+
+        .ytp-endscreen-content > [ycr-banned] {
+            border: 1px solid rgb(255 255 255 / 10%);
+            border-radius: 4px;
+            pointer-events: none;
+
+            &::before {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100%;
+                color: black;
+            }
+        }
     `) as unknown as string;
     document.head.appendChild(styleElem);
 };
@@ -88,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let foundComments = false;
     let foundChannels = false;
+    let foundEndscreen = false;
 
     // 監視対象要素の事前存在確認
     {
@@ -102,6 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elem) {
             foundChannels = true;
             channelsObserver.observe(elem, { childList: true, subtree: true });
+        }
+    }
+    {
+        const elem = document.querySelector('.ytp-endscreen-content')
+        if (elem) {
+            foundEndscreen = true;
+            endscreenObserver.observe(elem, { childList: true, subtree: true });
         }
     }
 
@@ -133,7 +156,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (foundComments && foundChannels) {
+        if (!foundEndscreen) {
+            const elem = document.querySelector('.ytp-endscreen-content');
+            if (elem) {
+                foundEndscreen = true;
+                endscreenObserver.observe(elem, { childList: true, subtree: true});
+            }
+        }
+
+        if (foundComments && foundChannels && foundEndscreen) {
             observer.disconnect();
         }
     });

@@ -1,0 +1,14 @@
+{
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+    },
+    "editor.formatOnSave": true,
+    "files.insertFinalNewline": true,
+    "typescript.tsdk": "./node_modules/typescript/lib",
+    "versionlens.npm.dependencyProperties": [
+        "dependencies",
+        "devDependencies",
+        "workspaces.catalog",
+    ],
+    "versionlens.suggestions.showOnStartup": true,
+}

@@ -1,11 +1,15 @@
 {
-    "compilerOptions": {
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "target": "ESNext",
-        "declaration": true,
-        "composite": true,
-        "strict": true,
-        "esModuleInterop": true,
-    },
+    "extends": "./tsconfig.base.json",
+    "references": [
+        {
+            "path": "./packages/gas",
+        },
+        {
+            "path": "./packages/tm",
+        },
+        {
+            "path": "./packages/types",
+        },
+    ],
+    "include": [],
 }

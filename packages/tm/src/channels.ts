@@ -1,11 +1,11 @@
 import { updateEndscreen } from './endscreen';
+import type { VideoData } from './lib';
 import {
     getBanChannels,
     getBanMixlists,
     logger,
     pressEscKey,
     pushBan,
-    VideoData,
     videoDataList,
 } from './lib';
 
@@ -44,7 +44,7 @@ const setupMenuButton = (elem: HTMLElement, videoData: VideoData) => {
                 );
                 if (!listElem) return;
 
-                videoBanButtonElem.onclick = e => {
+                videoBanButtonElem.onclick = (e) => {
                     pushBan(e);
                     updateChannels();
                 };
@@ -60,7 +60,7 @@ const setupMenuButton = (elem: HTMLElement, videoData: VideoData) => {
                 );
                 if (!listElem) return;
 
-                videoBanButtonElem.onclick = e => {
+                videoBanButtonElem.onclick = (e) => {
                     pushBan(e);
                     updateChannels();
                 };
@@ -73,11 +73,11 @@ const setupMenuButton = (elem: HTMLElement, videoData: VideoData) => {
             }
             else if (videoData.type === 'short') {
                 const listElem = document.querySelector<HTMLElement>(
-                    'ytd-popup-container > tp-yt-iron-dropdown tp-yt-paper-listbox'
+                    'ytd-popup-container > tp-yt-iron-dropdown tp-yt-paper-listbox',
                 );
                 if (!listElem) return;
 
-                videoBanButtonElem.onclick = e => {
+                videoBanButtonElem.onclick = (e) => {
                     pushBan(e);
                     pressEscKey(videoBanButtonElem);
                     updateChannels();
@@ -112,7 +112,7 @@ const getVideoData = (elem: HTMLElement): VideoData | undefined => {
 
     let data: Record<string, unknown> | undefined;
 
-    if (ytVideoElem.rawProps && ytVideoElem.rawProps.data) {
+    if (ytVideoElem.rawProps?.data) {
         data = ytVideoElem.rawProps.data();
     }
     else if (ytVideoElem.data) {
@@ -250,14 +250,14 @@ const executeChannel = (deleteTargetElem: HTMLElement) => {
     setupMenuButton(deleteTargetElem, videoData);
 };
 
-export const channelsObserver = new MutationObserver(mutationList => {
+export const channelsObserver = new MutationObserver((mutationList) => {
     const list = mutationList.filter(x =>
         x.target instanceof HTMLElement &&
         x.type === 'childList' && (
             x.target.tagName === 'YT-LOCKUP-VIEW-MODEL' ||
             x.target.tagName === 'YTD-COMPACT-VIDEO-RENDERER'
         ) &&
-        !x.target.hasAttribute('ycr-banned')
+        !x.target.hasAttribute('ycr-banned'),
     );
     if (!list.length) return;
 

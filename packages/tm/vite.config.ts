@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+
 import { version } from '../../package.json';
 import packageJson from './package.json';
 
@@ -31,7 +32,7 @@ export default defineConfig({
             banner += '// ==/UserScript==\n\n';
 
             banner += `const SCRIPT_NAME = '${name}';\n`;
-            banner += `const BACKEND_URL = '{{BACKEND_URL}}';\n\n`;
+            banner += 'const BACKEND_URL = \'{{BACKEND_URL}}\';\n\n';
 
             for (const fname of Object.keys(bundle)) {
                 const chunk = bundle[fname];

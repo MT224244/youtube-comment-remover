@@ -1,3 +1,5 @@
+import type { BanChannel, BanId, BanMixlist, BanWord } from '@ycr/types';
+
 import {
     GET_getBans,
     GET_meta,
@@ -19,7 +21,7 @@ import {
 global.manual_getFileList = () => {
     const { files } = Drive.Files.list({
         spaces: 'appDataFolder',
-        q: `'appDataFolder' in parents`,
+        q: '\'appDataFolder\' in parents',
     });
 
     Logger.log(files);
@@ -59,6 +61,7 @@ global.manual_anyRemoveFile = () => {
  * 動作確認用
  */
 global.manual_forTest = () => {
+    //
 };
 
 // #endregion
@@ -86,20 +89,16 @@ global.doPost = ({ parameters, postData }) => {
     const [q] = parameters.q ?? [undefined];
 
     if (q === 'pushBanId') {
-        const data = JSON.parse(postData.getDataAsString());
-        return POST_pushBanId(data);
+        return POST_pushBanId(JSON.parse(postData.getDataAsString()) as BanId);
     }
     else if (q === 'pushBanWord') {
-        const data = JSON.parse(postData.getDataAsString());
-        return POST_pushBanWord(data);
+        return POST_pushBanWord(JSON.parse(postData.getDataAsString()) as BanWord);
     }
     else if (q === 'pushBanChannel') {
-        const data = JSON.parse(postData.getDataAsString());
-        return POST_pushBanChannel(data);
+        return POST_pushBanChannel(JSON.parse(postData.getDataAsString()) as BanChannel);
     }
     else if (q === 'pushBanMixlist') {
-        const data = JSON.parse(postData.getDataAsString());
-        return POST_pushBanMixlist(data);
+        return POST_pushBanMixlist(JSON.parse(postData.getDataAsString()) as BanMixlist);
     }
     else {
         return return404();

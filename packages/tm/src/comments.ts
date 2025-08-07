@@ -24,7 +24,7 @@ export const setupWordBan = () => {
 
     document.body.appendChild(wordBanButtonContainer);
 
-    document.addEventListener('mouseup', async e => {
+    document.addEventListener('mouseup', async (e) => {
         // 左クリックでない場合は無視
         if (e.button !== 0) return;
 
@@ -50,7 +50,7 @@ export const setupWordBan = () => {
         wordBanButtonContainer.style.left = `${e.clientX}px`;
     });
 
-    document.addEventListener('mousedown', e => {
+    document.addEventListener('mousedown', (e) => {
         // 左クリックでない場合は無視
         if (e.button !== 0) return;
 
@@ -79,7 +79,7 @@ const setupMenuButton = (elem: HTMLElement, id: string, name: string) => {
             );
             if (!listElem) return;
 
-            idBanButtonElem.onclick = e => {
+            idBanButtonElem.onclick = (e) => {
                 pushBan(e);
                 pressEscKey(idBanButtonElem);
                 updateComments();
@@ -161,18 +161,18 @@ const executeComment = async (deleteTargetElem: HTMLElement) => {
     setupMenuButton(deleteTargetElem, authorId, authorName);
 };
 
-export const commentsObserver = new MutationObserver(mutationList => {
+export const commentsObserver = new MutationObserver((mutationList) => {
     const list = mutationList.filter(x =>
         x.target instanceof HTMLElement &&
         x.type === 'childList' &&
         x.target.tagName === 'YTD-COMMENT-VIEW-MODEL' &&
-        !x.target.hasAttribute('ycr-banned')
+        !x.target.hasAttribute('ycr-banned'),
     );
     if (!list.length) return;
 
     for (const mutation of list) {
         if (mutation.target instanceof HTMLElement) {
-            executeComment(mutation.target);
+            void executeComment(mutation.target);
         }
     }
 });

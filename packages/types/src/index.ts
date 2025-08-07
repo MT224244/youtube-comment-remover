@@ -1,26 +1,26 @@
-export type BanId = {
+export interface BanId {
     id: string;
     name: string;
-};
+}
 
-export type BanWord = {
+export interface BanWord {
     word: string;
-};
+}
 
-export type BanChannel = {
+export interface BanChannel {
     id: string;
     name: string;
-};
+}
 
-export type BanMixlist = {
+export interface BanMixlist {
     id: string;
     title: string;
     name: string;
-};
+}
 
-export type BansJson = {
+export interface BansJson {
     ids: BanId[];
     words: BanWord[];
     channels: BanChannel[];
     mixlists: BanMixlist[];
-};
+}

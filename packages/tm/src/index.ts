@@ -1,8 +1,9 @@
-import { BansJson } from '@ycr/types';
-import { logger, ycrPolicy } from './lib';
-import { commentsObserver, setupWordBan } from './comments';
+import type { BansJson } from '@ycr/types';
+
 import { channelsObserver } from './channels';
+import { commentsObserver, setupWordBan } from './comments';
 import { endscreenObserver } from './endscreen';
+import { logger, ycrPolicy } from './lib';
 
 const appendStyle = () => {
     const styleElem = document.createElement('style');
@@ -85,7 +86,7 @@ const fetchBans = async () => {
         url: `${BACKEND_URL}?q=getBans`,
         onload: (res) => {
             logger(res);
-            resolve(JSON.parse(res.responseText));
+            resolve(JSON.parse(res.responseText) as BansJson);
         },
     }));
 };
@@ -121,23 +122,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     {
-        const elem = document.querySelector('.ytp-endscreen-content')
+        const elem = document.querySelector('.ytp-endscreen-content');
         if (elem) {
             foundEndscreen = true;
             endscreenObserver.observe(elem, { childList: true, subtree: true });
         }
     }
 
-    const observer = new MutationObserver(mutationList => {
+    const observer = new MutationObserver((mutationList) => {
         const list = mutationList.filter(x =>
             x.target instanceof HTMLElement &&
-            x.type === 'childList'
+            x.type === 'childList',
         );
 
         if (!foundComments) {
             const mutation = list.find(x =>
                 x.target instanceof HTMLElement &&
-                x.target.id === 'comments'
+                x.target.id === 'comments',
             );
             if (mutation) {
                 foundComments = true;
@@ -148,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!foundChannels) {
             const mutation = list.find(x =>
                 x.target instanceof HTMLElement &&
-                x.target.tagName === 'YTD-WATCH-NEXT-SECONDARY-RESULTS-RENDERER'
+                x.target.tagName === 'YTD-WATCH-NEXT-SECONDARY-RESULTS-RENDERER',
             );
             if (mutation) {
                 foundChannels = true;
@@ -160,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const elem = document.querySelector('.ytp-endscreen-content');
             if (elem) {
                 foundEndscreen = true;
-                endscreenObserver.observe(elem, { childList: true, subtree: true});
+                endscreenObserver.observe(elem, { childList: true, subtree: true });
             }
         }
 
@@ -172,11 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
     observer.observe(document.body, { childList: true, subtree: true });
 
     // データベースと同期する
-    fetchBans().then(bans => {
+    fetchBans().then((bans) => {
         GM_setValue('ids', bans.ids);
         GM_setValue('words', bans.words);
         GM_setValue('channels', bans.channels);
         GM_setValue('mixlists', bans.mixlists);
         logger('Sync BANs:', bans);
-    });
+    }).catch(() => { /* */ });
 });

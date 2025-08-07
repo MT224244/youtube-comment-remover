@@ -35,7 +35,7 @@ export const getFile = (): BansJson => {
         throw Error('ファイルIDが見つかりません。createFileを実行してください。');
     }
 
-    return JSON.parse(Drive.Files.get(fileId, { alt: 'media' }));
+    return JSON.parse(Drive.Files.get(fileId, { alt: 'media' })) as BansJson;
 };
 
 /**
@@ -257,7 +257,7 @@ export const saveFileId = (fileId: string) => {
  * ユーザープロパティからファイルIDを取得
  */
 export const getFileId = () => {
-    const userPropsService = PropertiesService.getUserProperties()
+    const userPropsService = PropertiesService.getUserProperties();
     const fileId = userPropsService.getProperty('FILE_ID');
     Logger.log(`FileId: ${fileId}`);
 

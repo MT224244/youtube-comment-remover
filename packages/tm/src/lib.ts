@@ -1,4 +1,4 @@
-import { BanChannel, BanId, BanMixlist, BanWord } from '@ycr/types';
+import type { BanChannel, BanId, BanMixlist, BanWord } from '@ycr/types';
 
 export const ycrPolicy = window.trustedTypes?.createPolicy('ycr-policy', {
     createHTML: (unsafeValue) => {
@@ -95,13 +95,13 @@ export const pressEscKey = (elem: HTMLElement) => {
     }));
 };
 
-export type VideoData = {
+export interface VideoData {
     type: 'video' | 'short' | 'mixlist';
     videoId: string;
     videoTitle?: string;
     channelId?: string;
     channelName: string;
-};
+}
 
 // エンドスクリーン用
 export const videoDataList: VideoData[] = [];

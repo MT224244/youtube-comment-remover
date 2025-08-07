@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite';
 import gasPlugin from 'rollup-plugin-google-apps-script';
+import { defineConfig } from 'vite';
+
 import { version } from '../../package.json';
 
 export default defineConfig({
     plugins: [
-        gasPlugin()
+        gasPlugin(),
     ],
     define: {
         VERSION: JSON.stringify(version),

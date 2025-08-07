@@ -32,14 +32,14 @@ export const updateEndscreen = () => {
         .forEach(executeEndscreen);
 };
 
-export const endscreenObserver = new MutationObserver(mutationList => {
+export const endscreenObserver = new MutationObserver((mutationList) => {
     const list = mutationList.filter(x =>
         x.target instanceof HTMLElement &&
         x.type === 'childList' &&
         x.target.classList.contains('ytp-endscreen-content') &&
         x.addedNodes.length > 0 &&
         x.addedNodes[0] instanceof HTMLAnchorElement &&
-        !x.addedNodes[0].hasAttribute('ycr-banned')
+        !x.addedNodes[0].hasAttribute('ycr-banned'),
     );
     if (!list.length) return;
 

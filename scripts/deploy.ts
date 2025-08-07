@@ -1,10 +1,11 @@
 import { $ as shell } from 'bun';
+
 import { version } from '../package.json';
 
 const $ = async (strings: TemplateStringsArray, ...expressions: Bun.ShellExpression[]) => {
     const command = strings.raw
         .map(x => x.replace(/\s?\\\r?\n[\s\t]*/g, ' '))
-        .reduce((a, b, index) => a + `${expressions[index - 1] ?? ''}` + b, '')
+        .reduce((a, b, index) => a + (expressions[index - 1] ?? '').toString() + b, '')
         .trim();
     console.log('$', command);
 

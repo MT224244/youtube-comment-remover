@@ -9,4 +9,4 @@ declare global {
     var doPost: (e: GoogleAppsScript.Events.DoPost) => GoogleAppsScript.Content.TextOutput;
 }
 
-export {};
+export { };

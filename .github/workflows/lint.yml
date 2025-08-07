@@ -1,0 +1,24 @@
+name: Lint
+
+on:
+    push:
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4
+
+          - name: Setup Bun
+            uses: oven-sh/setup-bun@v2
+            run: |
+                bun i
+
+          - name: TypeCheck
+            run: |
+                bun run typecheck
+
+          - name: Lint
+            run: |
+                bun run lint
